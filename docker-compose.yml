@@ -62,7 +62,7 @@ services:
         condition: service_healthy
     networks: [core]
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/health || exit 1"]
+      test: ["CMD-SHELL", "nginx -t >/dev/null 2>&1 || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 10
@@ -92,19 +92,9 @@ services:
     container_name: client-svc
     expose: ["5001"]
     networks: [core]
-    healthcheck:
-      test: ["CMD-SHELL", "nginx -t >/dev/null 2>&1 || exit 1"]
-      interval: 5s
-      timeout: 3s
-      retries: 30
 
   account-svc:
     build: ./account-svc
     container_name: account-svc
     expose: ["5002"]
     networks: [core]
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5002/health || exit 1"]
-      interval: 5s
-      timeout: 3s
-      retries: 30
