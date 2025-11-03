@@ -17,7 +17,7 @@ services:
     volumes:
       - ./kong/kong.yml:/kong/kong.yml:ro
     ports:
-      - "8000:8000" # user entrypoint
+      - "8001:8000" # user entrypoint
     depends_on:
       - lb
     networks: [edge, core]
