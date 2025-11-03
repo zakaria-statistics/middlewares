@@ -1,0 +1,11 @@
+{
+  "name": "account-svc",
+  "version": "1.0.0",
+  "private": true,
+  "description": "account service",
+  "main": "server.js",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
