@@ -1,0 +1,39 @@
+# kong/kong.yml
+_format_version: "3.0"
+_transform: true
+
+# Global plugins (apply to all routes)
+plugins:
+  # Add/propagate a Request ID if client didn’t send one
+  - name: request-transformer
+    config:
+      add:
+        headers:
+          - "x-request-id: $request_id"
+
+  # Simple rate limit (per-IP fallback). You can make it per-consumer if you enable key-auth below
+  - name: rate-limiting
+    config:
+      minute: 120
+
+  # Uncomment to enforce API key and create a consumer/key below
+  # - name: key-auth
+
+services:
+  - name: client-svc
+    url: http://lb:8080/client
+    routes:
+      - name: client-route
+        paths: ["/client"]
+
+  - name: account-svc
+    url: http://lb:8080/account
+    routes:
+      - name: account-route
+        paths: ["/account"]
+
+# If you enable key-auth above, also add a consumer + credential:
+# consumers:
+#   - username: demo
+#     keyauth_credentials:
+#       - key: "supersecret"

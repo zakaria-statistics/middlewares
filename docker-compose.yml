@@ -1,0 +1,110 @@
+version: "3.9"
+
+networks:
+  edge: {}
+  core: {}
+
+services:
+  # ───────── 1) GATEWAY ─────────
+  gateway:
+    image: kong:3.7
+    container_name: gateway
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: "/kong/kong.yml"
+      KONG_PROXY_LISTEN: "0.0.0.0:8000"
+      KONG_LOG_LEVEL: "notice"
+    volumes:
+      - ./kong/kong.yml:/kong/kong.yml:ro
+    ports:
+      - "8000:8000" # user entrypoint
+    depends_on:
+      - lb
+    networks: [edge, core]
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  # ───────── 2) LOAD BALANCER ─────────
+  lb:
+    image: haproxy:2.9
+    container_name: lb
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    expose:
+      - "8080" # only for core network
+    depends_on:
+      rp1:
+        condition: service_started
+      rp2:
+        condition: service_started
+    networks: [core]
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 8080 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  # ───────── 3) REVERSE PROXIES (two replicas on purpose) ─────────
+  rp1:
+    image: nginx:1.27
+    container_name: rp1
+    volumes:
+      - ./nginx/reverse-proxy.conf:/etc/nginx/conf.d/reverse-proxy.conf:ro
+    expose:
+      - "8000"
+    depends_on:
+      client-svc:
+        condition: service_healthy
+      account-svc:
+        condition: service_healthy
+    networks: [core]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  rp2:
+    image: nginx:1.27
+    container_name: rp2
+    volumes:
+      - ./nginx/reverse-proxy.conf:/etc/nginx/conf.d/reverse-proxy.conf:ro
+    expose:
+      - "8000"
+    depends_on:
+      client-svc:
+        condition: service_healthy
+      account-svc:
+        condition: service_healthy
+    networks: [core]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  # ───────── 4) SERVICES ─────────
+  client-svc:
+    build: ./client-svc
+    container_name: client-svc
+    expose: ["5001"]
+    networks: [core]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5001/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  account-svc:
+    build: ./account-svc
+    container_name: account-svc
+    expose: ["5002"]
+    networks: [core]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5002/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30

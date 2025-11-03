@@ -1,0 +1,6 @@
+# client-svc/Dockerfile
+FROM node:20-alpine
+WORKDIR /app
+COPY server.js .
+EXPOSE 5001
+CMD ["node", "server.js"]
