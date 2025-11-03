@@ -5,11 +5,11 @@ _transform: true
 # Global plugins (apply to all routes)
 plugins:
   # Add/propagate a Request ID if client didn’t send one
-  - name: request-transformer
+  - name: correlation-id
     config:
-      add:
-        headers:
-          - "x-request-id: $request_id"
+      header_name: "X-Request-ID"
+      generator: "uuid"
+      echo_downstream: true
 
   # Simple rate limit (per-IP fallback). You can make it per-consumer if you enable key-auth below
   - name: rate-limiting

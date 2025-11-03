@@ -2,6 +2,13 @@
 const express = require('express');
 const app = express();
 
+app.use((req, res, next) => {
+  const rid = req.get('X-Request-ID') || 'none';
+  res.set('X-Request-ID', rid);
+  console.log(`[account-svc] ${req.method} ${req.url} rid=${rid}`);
+  next();
+});
+
 app.get('/', (_req, res) => res.json({ service: 'account', ok: true, ts: Date.now() }));
 app.get('/slow', async (_req, res) => {
   await new Promise(r => setTimeout(r, 4000));   // simulate slow backend (4s)
